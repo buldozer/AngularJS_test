@@ -1,0 +1,106 @@
+
+<div ng-hide="isLoggedIn">
+    <!-- Login Section -->
+    <div class="container mt-4">
+        <h2 class="mb-4">Login</h2>
+        <form ng-submit="login()" class="col-md-6">
+            <div class="form-group">
+                <label for="username">Username:</label>
+                <input type="text" id="username" ng-model="username" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Password:</label>
+                <input type="password" id="password" ng-model="password" class="form-control" required>
+            </div>
+            <div class="form-group form-check">
+                <input type="checkbox" id="rememberMe" ng-model="rememberMe" class="form-check-input">
+                <label for="rememberMe" class="form-check-label">Remember Me</label>
+            </div>
+            <button type="submit" class="btn btn-primary">Login</button>
+        </form>
+    </div>
+</div>
+
+<div ng-show="isLoggedIn">
+
+    <div class="container mt-4">
+        <h1>Books Organizer</h1>
+        <!-- Book List Section -->
+        <div class="pull-right">
+            <a href="#!/favorites" ng-click="goToFavorites()" class="btn btn-success btn">View Favorites</a>
+
+            <label for="searchInput">Search books:</label>
+            <input type="text" id="searchInput" ng-model="searchQuery">
+            <button ng-click="searchBooks()">Search</button>
+        </div>
+    </div>
+
+    <div class="container mt-4">
+        <h2 class="mb-4">Book List</h2>
+
+        <div class="row">
+            <div class="col-md-4" ng-repeat="book in displayedBooks">
+                <div class="card mb-4">
+                    <!--<img class="card-img-top" ng-src="{{ book.cover_image || 'none' }}" alt="{{ book.name }}"> -->
+                    <div class="card-img-top d-flex justify-content-center align-items-center bg-light"
+                        style="height: 200px;">
+                        <!-- Use a Bootstrap icon as a placeholder for missing cover image -->
+                        <i class="fas fa-book fa-3x text-secondary"></i>
+                    </div>
+                    <div class="card-body">
+                        <h5 class="card-title">{{ book.name }}</h5>
+                        <p class="card-text">Description: {{ book.description }}</p>
+                        <p class="card-text">ID: {{ book.id }}</p>
+                        <button class="btn btn-primary" ng-click="showDetails(book)">Show More</button>
+                        <button class="btn" ng-class="{ 'btn-success': isFavorite(book), 'btn-outline-success': !isFavorite(book) }" ng-click="toggleFavorite(book)">
+                            {{ isFavorite(book) ? 'Unfavorite' : 'Favorite' }}
+                        </button>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-12">
+                <button class="btn btn-secondary mr-2" ng-click="changePage('prev')" ng-disabled="currentPage === 1">
+                    Previous
+                </button>
+                Page {{ currentPage }}
+                <button class="btn btn-secondary ml-2" ng-click="changePage('next')">Next</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap Modal for Book Details -->
+    <div class="modal fade" id="bookDetailsModal" tabindex="-1" role="dialog" aria-labelledby="bookDetailsModalLabel"
+    aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="bookDetailsModalLabel">Book Details</h5>
+                    <button type="button" class="close"  aria-label="Close"  ng-click="closeModal()">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="card-img-top d-flex justify-content-center align-items-center bg-light"
+                        style="height: 200px;">
+                        <i class="fas fa-book fa-3x text-secondary"></i>
+                    </div>
+                    <h5>{{ selectedBook.name }}</h5>
+                    <p>{{ selectedBook.description }}</p>
+                    <p>ID: {{ selectedBook.id }}</p>
+                    <!-- Add more details as needed -->
+
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary"  ng-click="closeModal()">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+
+

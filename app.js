@@ -1,8 +1,12 @@
 angular.module('bookApp', ['ngCookies','ngRoute'])
     .config(function ($routeProvider) {
         $routeProvider
+            .when('/', {
+                templateUrl: 'templates/main.html', // Update to the correct path
+                controller: 'MainController'
+            })
             .when('/favorites', {
-                templateUrl: 'favorites.html',
+                templateUrl: 'templates/favorites.html', // Update to the correct path
                 controller: 'FavoritesController'
             })
             .otherwise({
@@ -10,6 +14,9 @@ angular.module('bookApp', ['ngCookies','ngRoute'])
             });
     })
     .controller('MainController', function ($scope, $http, $cookies, $location) {
+
+        console.log('MainController invoked');
+
         $scope.isLoggedIn = false;
         $scope.username = '';
         $scope.password = '';
@@ -22,27 +29,43 @@ angular.module('bookApp', ['ngCookies','ngRoute'])
         $scope.currentPage = 1;
         $scope.itemsPerPage = 10;
 
-        $scope.favorites = [];
+        $scope.favorites = $cookies.getObject('favorites') || [];
     
+        /*
         var rememberMeCookie = $cookies.get('rememberMe');
         if (rememberMeCookie ==='true') {
             // If the rememberMe cookie is set to true, automatically log in
             $scope.login();
         }
+        */
 
-        $scope.login = function () {
-            // For now, we're just setting isLoggedIn to true
-            $scope.isLoggedIn = true;
-            // Save rememberMe value in a cookie with a one-hour lifetime
-            $cookies.put('rememberMe', $scope.rememberMe.toString(), { expires: new Date(Date.now() + 3600000) });
-            $scope.updateDisplayedBooks();
+        
+        $scope.goToFavorites = function () {
+            $location.path('/favorites');
+         };
+
+
+        $scope.loadPage = function(){
+           
             // Load books from the JSON file
             /*$http.get('./books.json').then(function (response) {
                 $scope.books = response.data;
                 $scope.updateDisplayedBooks();
             });*/
+            $scope.favorites = $cookies.getObject('favorites') || [];
+            $scope.books = window.booksData || []; // Assuming window.booksData is defined in booksData.js 
+            $scope.updateDisplayedBooks();
+        }
 
-            $scope.books = window.booksData || []; // Assuming window.booksData is defined in booksData.js
+        $scope.login = function () {
+            // For now, we're just setting isLoggedIn to true
+            $scope.isLoggedIn = true;
+
+            // Save rememberMe value in a cookie with a 10 hour lifetime
+            if ($scope.rememberMe == true || $cookies.get('rememberMe') ==='true') {
+                $cookies.put('rememberMe', 'true', { expires: new Date(Date.now() + 36000000) });
+            }
+            $scope.loadPage();
         };
 
         $scope.searchBooks = function () {
@@ -64,19 +87,32 @@ angular.module('bookApp', ['ngCookies','ngRoute'])
 
         $scope.toggleFavorite = function (book) {
             // Toggle the favorite status of the book
-            var index = $scope.favorites.indexOf(book);
+            var index = $scope.favorites.indexOf(book.id);
             if (index === -1) {
                 // If the book is not in favorites, add it
-                $scope.favorites.push(book);
+                $scope.favorites.push(book.id);
             } else {
                 // If the book is already in favorites, remove it
                 $scope.favorites.splice(index, 1);
             }
+
+            //console.log( $scope.favorites);
+
+            // Store the updated favorites in cookies
+            $cookies.putObject('favorites', $scope.favorites);
+
+            // If on the favorites page, update the stored favorites there as well
+            /*if ($location.path() === '/favorites') {
+                $scope.storeFavorites();
+            }*/
         };
         
         $scope.isFavorite = function (book) {
             // Check if the book is in the favorites list
-            return $scope.favorites.indexOf(book) !== -1;
+            //console.log(book);
+            //console.log('isFavorite? '+ $scope.favorites.indexOf(book));
+
+            return $scope.favorites.indexOf(book.id) !== -1;
         };
         $scope.changePage = function (direction) {
             if (direction === 'prev' && $scope.currentPage > 1) {
@@ -101,15 +137,83 @@ angular.module('bookApp', ['ngCookies','ngRoute'])
             $('#bookDetailsModal').modal('hide');
         };
 
-        $scope.goToFavorites = function () {
-            // Navigate to the favorites page
-            $location.path('/favorites');
-        };
+        if($scope.isLoggedIn || $cookies.get('rememberMe') === 'true'){
+            $scope.isLoggedIn = true;
+            $scope.loadPage();
+        }
     })
 
     .controller('FavoritesController', function ($scope, $cookies) {
-        // Initialize favorites from cookies or an empty array
+
+        console.log('FavoritesController invoked');
+
+        $scope.currentPage = 1;
+        $scope.itemsPerPage = 10; 
+        $scope.books = window.booksData || [];
         $scope.favorites = $cookies.getObject('favorites') || [];
 
-        // ... (add other functions if needed)
+        $scope.displayedBooks = $scope.books.filter(function (book) {
+            return $scope.favorites.indexOf(book.id) !== -1;
+        }) || [];
+        $scope.selectedBook =  {};
+
+        $scope.changePage = function (direction) {
+            if (direction === 'prev' && $scope.currentPage > 1) {
+                $scope.currentPage--;
+            } else if (direction === 'next' && $scope.currentPage < $scope.totalPages()) {
+                $scope.currentPage++;
+            }
+
+            $scope.updateDisplayedBooks();
+        };
+
+        $scope.totalPages = function () {
+            return Math.ceil($scope.books.length / $scope.itemsPerPage);
+        };
+
+        $scope.updateDisplayedBooks = function () {
+            $scope.displayedBooks = $scope.books.filter(function (book) {
+                return $scope.favorites.indexOf(book.id) !== -1;
+            });
+
+            var startIndex = ($scope.currentPage - 1) * $scope.itemsPerPage;
+            $scope.displayedBooks = $scope.displayedBooks.slice(startIndex, startIndex + $scope.itemsPerPage);
+
+            //console.log($scope.displayedBooks);
+        };
+
+        $scope.toggleFavorite = function (book) {
+           
+            var index = $scope.favorites.indexOf(book.id);
+            if (index === -1) {
+                // If the book is not in favorites, add it
+                $scope.favorites.push(book.id);
+            } else {
+                // If the book is already in favorites, remove it
+                $scope.favorites.splice(index, 1);
+                $scope.updateDisplayedBooks();
+            }
+            $cookies.putObject('favorites', $scope.favorites);
+        };
+
+        $scope.isFavorite = function (book) {
+            return $scope.favorites.indexOf(book.id) !== -1;
+        };
+
+        $scope.showDetails = function (book) {
+            $scope.selectedBook =  angular.copy(book);
+            $('#favoriteBookDetailsModal').modal('show');
+        };
+
+        $scope.closeModal = function () {
+            $('#favoriteBookDetailsModal').modal('hide');
+        };
+
+        $scope.goToHome = function(){
+            $location.path('/');
+        };
+
+        $scope.updateDisplayedBooks();
+
+
     });
