@@ -1,0 +1,14 @@
+.book-item {
+    border: 1px solid #ccc;
+    padding: 10px;
+    margin: 10px 0;
+}
+
+.book-cover {
+    width: 100px;
+    height: 150px; 
+    background-color: #ddd; 
+    background-size: cover;
+    background-position: center;
+    margin-bottom: 10px; 
+}
